@@ -1,20 +1,20 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const mongoose = require('mongoose'); // 新增 mongoose 模組
+const mongoose = require('mongoose'); // 引入資料庫套件
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. 連線到 MongoDB
+// 1. 連線到 MongoDB (使用你在 Render 設定的環境變數)
 const MONGODB_URI = process.env.MONGODB_URI;
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ 雲端資料庫連線成功'))
     .catch(err => console.error('❌ 資料庫連線失敗:', err));
 
-// 2. 定義股票資料結構 (Schema)
+// 2. 定義股票資料儲存格式
 const stockSchema = new mongoose.Schema({
     id: String,
     name: String,
@@ -25,7 +25,7 @@ const stockSchema = new mongoose.Schema({
 });
 const Stock = mongoose.model('Stock', stockSchema);
 
-// 3. 原有的抓取報價 API
+// 3. 抓取即時股價 API
 app.get('/api/quote/:symbol', async (req, res) => {
     try {
         const symbol = req.params.symbol;
@@ -37,7 +37,7 @@ app.get('/api/quote/:symbol', async (req, res) => {
     }
 });
 
-// 4. 新增：獲取雲端股票清單
+// 4. 從雲端資料庫讀取清單
 app.get('/api/stocks', async (req, res) => {
     try {
         const stocks = await Stock.find();
@@ -47,7 +47,7 @@ app.get('/api/stocks', async (req, res) => {
     }
 });
 
-// 5. 新增：儲存股票到雲端
+// 5. 將股票儲存到雲端資料庫
 app.post('/api/stocks', async (req, res) => {
     try {
         const newStock = new Stock(req.body);
@@ -58,7 +58,7 @@ app.post('/api/stocks', async (req, res) => {
     }
 });
 
-// 6. 新增：從雲端刪除股票
+// 6. 從雲端資料庫刪除股票
 app.delete('/api/stocks/:id', async (req, res) => {
     try {
         await Stock.deleteOne({ id: req.params.id });
